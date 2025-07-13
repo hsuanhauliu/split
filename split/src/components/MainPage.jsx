@@ -1511,7 +1511,7 @@ const MemberViewModal = ({ participants, currentOptions, onApply, onClear }) => 
 };
 
 
-export default function App() {
+export default function MainPage() {
     const initialState = {
         name: '',
         participants: [],
