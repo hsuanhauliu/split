@@ -40,9 +40,9 @@ const downloadAsFile = (filename, content) => {
 
 // --- Color Generation for User Icons ---
 const colors = [
-    'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-yellow-500', 'bg-lime-500', 
-    'bg-green-500', 'bg-emerald-500', 'bg-teal-500', 'bg-cyan-500', 'bg-sky-500', 
-    'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-purple-500', 'bg-fuchsia-500', 
+    'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-yellow-500', 'bg-lime-500',
+    'bg-green-500', 'bg-emerald-500', 'bg-teal-500', 'bg-cyan-500', 'bg-sky-500',
+    'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-purple-500', 'bg-fuchsia-500',
     'bg-pink-500', 'bg-rose-500'
 ];
 const getColorByIndex = (index) => {
@@ -56,7 +56,7 @@ const formatReceipt = (expense) => {
         if (exp.isPayment) {
             return `Payment from ${exp.paidBy} to ${exp.splitBetween[0]}`;
         }
-        switch(exp.splitMethod) {
+        switch (exp.splitMethod) {
             case 'evenly':
                 const share = exp.amount / exp.splitBetween.length;
                 return `Split evenly with:\n${exp.splitBetween.map(p => `  - ${p}: $${share.toFixed(2)}`).join('\n')}`;
@@ -68,8 +68,8 @@ const formatReceipt = (expense) => {
                 }).join('\n');
                 return `Split by ${exp.splitMethod}:\n${details}`;
             case 'item':
-                 const itemDetails = Object.entries(exp.itemized).map(([name, value]) => `  - ${name}: $${value.toFixed(2)}`).join('\n');
-                 return `Split by item:\n${itemDetails}`;
+                const itemDetails = Object.entries(exp.itemized).map(([name, value]) => `  - ${name}: $${value.toFixed(2)}`).join('\n');
+                return `Split by item:\n${itemDetails}`;
             default:
                 return 'Split details unavailable';
         }
@@ -79,13 +79,14 @@ const formatReceipt = (expense) => {
     receipt += `        ${expense.isPayment ? 'Payment' : 'Expense'} Receipt\n`;
     receipt += '---------------------------------\n';
     receipt += `Description: ${expense.description}\n`;
+    if (expense.expenseType) receipt += `Type: ${expense.expenseType}\n`;
     receipt += `Total Amount: $${expense.amount.toFixed(2)}\n`;
     if (!expense.isPayment) {
         receipt += `  - Base Amount: $${(expense.baseAmount || expense.amount).toFixed(2)}\n`;
-        if(expense.tips) receipt += `  - Tips: $${expense.tips.toFixed(2)}\n`;
-        if(expense.tax) receipt += `  - Tax: $${expense.tax.toFixed(2)}\n`;
-        if(expense.serviceCharge) receipt += `  - Service Charge: $${expense.serviceCharge.toFixed(2)}\n`;
-        if(expense.otherCharges) receipt += `  - Other: $${expense.otherCharges.toFixed(2)}\n`;
+        if (expense.tips) receipt += `  - Tips: $${expense.tips.toFixed(2)}\n`;
+        if (expense.tax) receipt += `  - Tax: $${expense.tax.toFixed(2)}\n`;
+        if (expense.serviceCharge) receipt += `  - Service Charge: $${expense.serviceCharge.toFixed(2)}\n`;
+        if (expense.otherCharges) receipt += `  - Other: $${expense.otherCharges.toFixed(2)}\n`;
     }
     receipt += `Date: ${expense.date}\n`;
     if (expense.isPayment) {
@@ -137,11 +138,11 @@ const calculateBalances = (expenses, participants) => {
                     });
                     break;
                 case 'amount':
-                     if (!splitValues) break;
-                     Object.entries(splitValues).forEach(([personName, shareAmount]) => {
-                         shares[personName] = parseFloat(shareAmount);
-                     });
-                     break;
+                    if (!splitValues) break;
+                    Object.entries(splitValues).forEach(([personName, shareAmount]) => {
+                        shares[personName] = parseFloat(shareAmount);
+                    });
+                    break;
                 case 'percentage':
                     if (!splitValues) break;
                     Object.entries(splitValues).forEach(([personName, percentage]) => {
@@ -149,7 +150,7 @@ const calculateBalances = (expenses, participants) => {
                         shares[personName] = share;
                     });
                     break;
-                 case 'item':
+                case 'item':
                     if (!itemized) break;
                     const baseTotal = Object.values(itemized).reduce((sum, val) => sum + val, 0);
                     const extras = amount - baseTotal;
@@ -199,8 +200,8 @@ const Modal = ({ children, onClose }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-full overflow-y-auto">
             <div className="p-6 relative">
-                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-3xl leading-none">&times;</button>
-                 {children}
+                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-3xl leading-none">&times;</button>
+                {children}
             </div>
         </div>
     </div>
@@ -236,7 +237,7 @@ const Toast = ({ message, type = 'error', onDismiss }) => {
             onDismiss();
         }
     };
-    
+
     const handleDismissClick = () => {
         setIsVisible(false);
     };
@@ -245,14 +246,13 @@ const Toast = ({ message, type = 'error', onDismiss }) => {
         error: 'bg-red-500',
         success: 'bg-green-500',
     };
-    
+
     if (!message && !isVisible) return null;
 
     return (
-        <div 
+        <div
             onTransitionEnd={handleTransitionEnd}
-            className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg text-white shadow-lg flex items-center gap-4 transform transition-all duration-500 ease-in-out ${colors[type]} ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}
-        >
+            className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg text-white shadow-lg flex items-center gap-4 transform transition-all duration-500 ease-in-out ${colors[type]} ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}>
             <span>{message}</span>
             <button onClick={handleDismissClick} className="text-xl leading-none">&times;</button>
         </div>
@@ -271,28 +271,28 @@ const GroupSetup = ({ setGroupName, setGroupData }) => {
     };
 
     const handleFileUpload = (event) => {
-      const file = event.target.files[0];
-      if (file && file.type === "application/json") {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const loadedData = JSON.parse(e.target.result);
-            if (loadedData.name && Array.isArray(loadedData.participants) && Array.isArray(loadedData.expenses)) {
-              setGroupData(loadedData);
-            } else {
-              alert('Invalid data file format.');
-            }
-          } catch (error) {
-            alert('Error parsing JSON file.');
-          }
-        };
-        reader.readAsText(file);
-      } else {
-        alert('Please upload a valid .json file.');
-      }
-      if(fileInputRef.current) {
-          fileInputRef.current.value = '';
-      }
+        const file = event.target.files[0];
+        if (file && file.type === "application/json") {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const loadedData = JSON.parse(e.target.result);
+                    if (loadedData.name && Array.isArray(loadedData.participants) && Array.isArray(loadedData.expenses)) {
+                        setGroupData(loadedData);
+                    } else {
+                        alert('Invalid data file format.');
+                    }
+                } catch (error) {
+                    alert('Error parsing JSON file.');
+                }
+            };
+            reader.readAsText(file);
+        } else {
+            alert('Please upload a valid .json file.');
+        }
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     return (
@@ -302,7 +302,7 @@ const GroupSetup = ({ setGroupName, setGroupData }) => {
                     <h1 className="text-4xl font-bold tracking-tight text-green-600 sm:text-5xl">Split</h1>
                     <p className="mt-4 text-lg text-gray-600">Create a group to start splitting expenses.</p>
                 </div>
-                
+
                 <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
                     <h2 className="text-2xl font-bold text-center mb-6">Start a New Group</h2>
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -329,11 +329,11 @@ const GroupSetup = ({ setGroupName, setGroupData }) => {
                             <span className="bg-white px-2 text-gray-500">OR</span>
                         </div>
                     </div>
-                     <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileUpload} accept=".json" />
-                     <button
+                    <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileUpload} accept=".json" />
+                    <button
                         onClick={() => fileInputRef.current.click()}
                         className="w-full py-3 px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-all duration-300"
-                     >
+                    >
                         Load from File
                     </button>
                 </div>
@@ -352,8 +352,6 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
     const [viewingParticipant, setViewingParticipant] = useState(null);
     const [showSearch, setShowSearch] = useState(false);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
-    const [showMemberView, setShowMemberView] = useState(false);
-    const [viewOptions, setViewOptions] = useState({ mode: 'none', person: null });
     const [toast, setToast] = useState({ message: '', type: 'error' });
 
     useEffect(() => {
@@ -366,7 +364,6 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
                 setViewingParticipant(null);
                 setShowSearch(false);
                 setShowResetConfirm(false);
-                setShowMemberView(false);
             }
         };
 
@@ -389,17 +386,17 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
         participantNames.forEach(name => {
             if (name && !existingNames.has(name.toLowerCase())) {
                 newParticipants.push({ id: crypto.randomUUID(), name });
-                existingNames.add(name.toLowerCase()); // Add to set to prevent duplicates within the same submission
+                existingNames.add(name.toLowerCase());
             } else if (name) {
                 duplicates.push(name);
             }
         });
-        
+
         if (newParticipants.length > 0) {
             updateGroup({ participants: [...participants, ...newParticipants] });
         }
         if (duplicates.length > 0) {
-            setToast({message: `Already in group: ${duplicates.join(', ')}`, type: 'error'})
+            setToast({ message: `Already in group: ${duplicates.join(', ')}`, type: 'error' })
         }
     };
 
@@ -412,70 +409,60 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
         const updatedExpenses = expenses.map(exp => exp.id === updatedExpense.id ? updatedExpense : exp);
         updateGroup({ expenses: updatedExpenses });
     };
-    
+
     const removeExpense = (expenseId) => {
         const updatedExpenses = expenses.filter(exp => exp.id !== expenseId);
         updateGroup({ expenses: updatedExpenses });
     };
 
     const { debts } = useMemo(() => calculateBalances(expenses, participants), [expenses, participants]);
-    
+
     return (
         <div className="min-h-screen bg-gray-50 text-gray-800 p-4 sm:p-6 lg:p-8">
             <Toast message={toast.message} type={toast.type} onDismiss={() => setToast({ message: '', type: 'error' })} />
             <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div>
-                         <button onClick={() => setShowResetConfirm(true)} className="text-red-500 hover:text-red-700 mb-2 font-semibold">&larr; Reset</button>
+                        <button onClick={() => setShowResetConfirm(true)} className="text-red-500 hover:text-red-700 mb-2 font-semibold">&larr; Reset</button>
                         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 break-all">{name}</h1>
                     </div>
-                     <ActionMenu 
+                    <ActionMenu
                         groupData={groupData}
                         onShowTotals={() => setShowTotals(true)}
                         onShowSearch={() => setShowSearch(true)}
-                        onShowMemberView={() => setShowMemberView(true)}
                         setToast={setToast}
                     />
                 </div>
-                
+
                 <div className="mb-8">
                     <AddParticipantForm onAddParticipants={addParticipants} />
                 </div>
-
-                {viewOptions.mode !== 'none' && (
-                    <div className="mb-8 p-3 bg-green-100 border border-green-300 rounded-lg flex justify-between items-center text-sm">
-                        <span>
-                            Viewing in <strong className="font-semibold">{viewOptions.mode} mode</strong> for <strong className="font-semibold">{viewOptions.person}</strong>.
-                        </span>
-                        <button onClick={() => setViewOptions({mode: 'none', person: null})} className="font-semibold text-green-700 hover:text-green-800">&times; Clear View</button>
-                    </div>
-                )}
 
                 <div className="mb-8">
                     <ParticipantsList participants={participants} onParticipantClick={setViewingParticipant} />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-1 space-y-8">
+                <div className="mb-8">
+                    <SettleUpSection debts={debts} onViewDebt={setViewingDebt} />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <div className="lg:col-span-2 space-y-8">
                         <AddExpenseForm participants={participants} onAddExpense={addExpense} />
                         <RecordPaymentForm participants={participants} onAddExpense={addExpense} />
                     </div>
 
-                    <div className="lg:col-span-1">
-                        <ExpenseList expenses={expenses} onRemoveExpense={removeExpense} onEditExpense={setEditingExpense} onViewExpense={setViewingExpense} viewOptions={viewOptions} />
-                    </div>
-
-                    <div className="lg:col-span-1">
-                        <DebtsSummary debts={debts} onViewDebt={setViewingDebt} viewOptions={viewOptions} />
+                    <div className="lg:col-span-3">
+                        <ExpenseList expenses={expenses} onRemoveExpense={removeExpense} onEditExpense={setEditingExpense} onViewExpense={setViewingExpense} participants={participants} />
                     </div>
                 </div>
             </div>
-            
+
             {editingExpense && (
                 <Modal onClose={() => setEditingExpense(null)}>
-                    <AddExpenseForm 
-                        participants={participants} 
-                        onAddExpense={updateExpense} 
+                    <AddExpenseForm
+                        participants={participants}
+                        onAddExpense={updateExpense}
                         expenseToEdit={editingExpense}
                         onDone={() => setEditingExpense(null)}
                     />
@@ -489,13 +476,13 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
             )}
 
             {viewingDebt && (
-                 <Modal onClose={() => setViewingDebt(null)}>
+                <Modal onClose={() => setViewingDebt(null)}>
                     <DebtDetail debt={viewingDebt} expenses={expenses} />
                 </Modal>
             )}
             {showTotals && (
                 <Modal onClose={() => setShowTotals(false)}>
-                    <TotalsDetail participants={participants} expenses={expenses} />
+                    <TotalsDetail participants={participants} expenses={expenses} debts={debts} />
                 </Modal>
             )}
             {viewingParticipant && (
@@ -509,7 +496,7 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
                 </Modal>
             )}
             {showResetConfirm && (
-                <ConfirmModal 
+                <ConfirmModal
                     title="Reset Group?"
                     message="Are you sure you want to reset the group? All data will be lost permanently."
                     onConfirm={() => {
@@ -519,31 +506,15 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
                     onCancel={() => setShowResetConfirm(false)}
                 />
             )}
-            {showMemberView && (
-                <Modal onClose={() => setShowMemberView(false)}>
-                    <MemberViewModal 
-                        participants={participants}
-                        currentOptions={viewOptions}
-                        onApply={(options) => {
-                            setViewOptions(options);
-                            setShowMemberView(false);
-                        }}
-                        onClear={() => {
-                            setViewOptions({mode: 'none', person: null});
-                            setShowMemberView(false);
-                        }}
-                    />
-                </Modal>
-            )}
         </div>
     );
 };
 
-const ActionMenu = ({ groupData, onShowTotals, onShowSearch, onShowMemberView, setToast }) => {
+const ActionMenu = ({ groupData, onShowTotals, onShowSearch, setToast }) => {
 
     const downloadAllReceipts = () => {
         if (groupData.expenses.length === 0) {
-            setToast({message: 'No expenses to download.', type: 'error'});
+            setToast({ message: 'No expenses to download.', type: 'error' });
             return;
         }
         const sortedExpenses = [...groupData.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -552,18 +523,45 @@ const ActionMenu = ({ groupData, onShowTotals, onShowSearch, onShowMemberView, s
             .join('\n\n');
         downloadAsFile(`all-receipts-${groupData.name.replace(/\s+/g, '-')}.txt`, allReceiptsContent);
     };
-    
+
     const downloadState = () => {
         downloadAsFile(`${groupData.name.replace(/\s+/g, '_')}-data.json`, JSON.stringify(groupData, null, 2));
     };
 
     return (
-        <div className="flex gap-2 flex-shrink-0 items-center">
-            <button onClick={onShowMemberView} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors text-sm">Member View</button>
-            <button onClick={onShowSearch} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors text-sm">Search History</button>
-            <button onClick={onShowTotals} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors text-sm">Overall Expenses</button>
-            <button onClick={downloadAllReceipts} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors text-sm">Download Receipt</button>
-            <button onClick={downloadState} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors text-sm">Download Data</button>
+        <div className="flex gap-2 flex-wrap justify-start sm:justify-end">
+            <div className="relative group flex justify-center">
+                <button onClick={onShowSearch} className="p-3 bg-green-600 hover:bg-green-700 text-white rounded-full transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                </button>
+                <span className="pointer-events-none absolute bottom-full mb-2 w-max px-2 py-1 bg-gray-800 text-white text-xs rounded-md invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity">
+                    Search History
+                </span>
+            </div>
+            <div className="relative group flex justify-center">
+                <button onClick={onShowTotals} className="p-3 bg-green-600 hover:bg-green-700 text-white rounded-full transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="20" y2="10" /><line x1="18" x2="18" y1="20" y2="4" /><line x1="6" x2="6" y1="20" y2="16" /></svg>
+                </button>
+                <span className="pointer-events-none absolute bottom-full mb-2 w-max px-2 py-1 bg-gray-800 text-white text-xs rounded-md invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity">
+                    Spending Overview
+                </span>
+            </div>
+            <div className="relative group flex justify-center">
+                <button onClick={downloadAllReceipts} className="p-3 bg-green-600 hover:bg-green-700 text-white rounded-full transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                </button>
+                <span className="pointer-events-none absolute bottom-full mb-2 w-max px-2 py-1 bg-gray-800 text-white text-xs rounded-md invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity">
+                    Download Receipt
+                </span>
+            </div>
+            <div className="relative group flex justify-center">
+                <button onClick={downloadState} className="p-3 bg-green-600 hover:bg-green-700 text-white rounded-full transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                </button>
+                <span className="pointer-events-none absolute bottom-full mb-2 w-max px-2 py-1 bg-gray-800 text-white text-xs rounded-md invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity">
+                    Download Data
+                </span>
+            </div>
         </div>
     );
 };
@@ -600,20 +598,13 @@ const ParticipantsList = ({ participants, onParticipantClick }) => {
     }, [participants]);
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200 w-full">
-            <h2 className="text-xl font-bold mb-4 text-green-700">Group Members</h2>
-            {sortedParticipants.length > 0 ? (
-                <div className="flex flex-wrap gap-4">
-                    {sortedParticipants.map((p, index) => (
-                        <button key={p.id} onClick={() => onParticipantClick(p)} className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-gray-800 flex items-center gap-3 transition-colors border border-gray-200">
-                            <span className={`w-8 h-8 rounded-full ${getColorByIndex(index)} text-white flex items-center justify-center font-bold text-sm flex-shrink-0`}>{p.name.charAt(0).toUpperCase()}</span>
-                            <span className="font-medium">{p.name}</span>
-                        </button>
-                    ))}
-                </div>
-            ) : (
-                <p className="text-gray-500">Add some people to the group to get started.</p>
-            )}
+        <div className="flex flex-wrap gap-4">
+            {sortedParticipants.map((p, index) => (
+                <button key={p.id} onClick={() => onParticipantClick(p)} className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-gray-800 flex items-center gap-3 transition-colors border border-gray-200">
+                    <span className={`w-8 h-8 rounded-full ${getColorByIndex(index)} text-white flex items-center justify-center font-bold text-sm flex-shrink-0`}>{p.name.charAt(0).toUpperCase()}</span>
+                    <span className="font-medium">{p.name}</span>
+                </button>
+            ))}
         </div>
     );
 };
@@ -635,9 +626,10 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
     const [splitValues, setSplitValues] = useState({});
     const [itemized, setItemized] = useState({});
     const [error, setError] = useState('');
+    const [expenseType, setExpenseType] = useState('General');
 
     const isEditMode = !!expenseToEdit;
-    
+
     const itemizedBaseAmount = useMemo(() => {
         if (splitMethod !== 'item') return 0;
         return Object.values(itemized).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
@@ -645,11 +637,11 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
 
     const totalAmount = useMemo(() => {
         const base = splitMethod === 'item' ? itemizedBaseAmount : (parseFloat(baseAmount) || 0);
-        return base + 
-               (parseFloat(tips) || 0) + 
-               (parseFloat(tax) || 0) + 
-               (parseFloat(serviceCharge) || 0) + 
-               (parseFloat(otherCharges) || 0);
+        return base +
+            (parseFloat(tips) || 0) +
+            (parseFloat(tax) || 0) +
+            (parseFloat(serviceCharge) || 0) +
+            (parseFloat(otherCharges) || 0);
     }, [baseAmount, itemizedBaseAmount, tips, tax, serviceCharge, otherCharges, splitMethod]);
 
 
@@ -666,6 +658,7 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
             setPaidBy(expenseToEdit.paidBy);
             setSplitMethod(expenseToEdit.splitMethod);
             setItemized(expenseToEdit.itemized || {});
+            setExpenseType(expenseToEdit.expenseType || 'General');
 
             if (expenseToEdit.splitMethod === 'evenly') {
                 setSplitBetween(expenseToEdit.splitBetween);
@@ -674,23 +667,23 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
                 setSplitValues(expenseToEdit.splitValues || {});
             }
         } else {
-             if (participants.length > 0) {
-                if(!paidBy) setPaidBy(participants[0].name);
+            if (participants.length > 0) {
+                if (!paidBy) setPaidBy(participants[0].name);
                 setSplitBetween(participants.map(p => p.name));
-             }
+            }
         }
     }, [expenseToEdit, participants]);
-    
+
     const handleSplitValueChange = (name, value) => {
-        setSplitValues(prev => ({...prev, [name]: value}));
+        setSplitValues(prev => ({ ...prev, [name]: value }));
     };
 
     const handleItemizedValueChange = (name, value) => {
-        setItemized(prev => ({...prev, [name]: value}));
+        setItemized(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSplitBetweenChange = (name) => {
-        setSplitBetween(prev => 
+        setSplitBetween(prev =>
             prev.includes(name) ? prev.filter(p => p !== name) : [...prev, name]
         );
     };
@@ -705,7 +698,7 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
             setError("Please fill in a valid description, amount, date, and payer.");
             return;
         }
-        
+
         let expenseData = {
             id: isEditMode ? expenseToEdit.id : crypto.randomUUID(),
             description,
@@ -719,12 +712,13 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
             date,
             notes,
             splitMethod,
+            expenseType,
         };
 
         if (splitMethod === 'item') {
             const relevantItems = Object.entries(itemized)
                 .filter(([name, value]) => splitBetween.includes(name) && value && parseFloat(value) > 0)
-                .reduce((acc, [name, value]) => ({...acc, [name]: parseFloat(value)}), {});
+                .reduce((acc, [name, value]) => ({ ...acc, [name]: parseFloat(value) }), {});
             if (Object.keys(relevantItems).length === 0) {
                 setError("Please enter item costs for at least one person.");
                 return;
@@ -740,8 +734,8 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
         } else {
             const relevantSplitValues = Object.entries(splitValues)
                 .filter(([name, value]) => splitBetween.includes(name) && value && parseFloat(value) > 0)
-                .reduce((acc, [name, value]) => ({...acc, [name]: parseFloat(value)}), {});
-            
+                .reduce((acc, [name, value]) => ({ ...acc, [name]: parseFloat(value) }), {});
+
             if (Object.keys(relevantSplitValues).length === 0) {
                 setError("Please enter values for at least one person.");
                 return;
@@ -761,8 +755,8 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
         }
 
         onAddExpense(expenseData);
-        if(onDone) onDone();
-        
+        if (onDone) onDone();
+
         if (!isEditMode) {
             setDescription('');
             setBaseAmount('');
@@ -774,9 +768,10 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
             setNotes('');
             setError('');
             setItemized({});
+            setExpenseType('General');
         }
     };
-    
+
     const { remainingAmount, remainingColor } = useMemo(() => {
         if (splitMethod === 'evenly' || splitMethod === 'item' || totalAmount <= 0) {
             return { remainingAmount: 0, remainingColor: 'text-gray-500' };
@@ -784,7 +779,7 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
         const currentTotal = Object.entries(splitValues)
             .filter(([name]) => splitBetween.includes(name))
             .reduce((sum, [, value]) => sum + (parseFloat(value) || 0), 0);
-        
+
         if (splitMethod === 'amount') {
             const remaining = totalAmount - currentTotal;
             return {
@@ -793,8 +788,8 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
             };
         }
         if (splitMethod === 'percentage') {
-             const remaining = 100 - currentTotal;
-             return {
+            const remaining = 100 - currentTotal;
+            return {
                 remainingAmount: remaining,
                 remainingColor: Math.abs(remaining) < 0.01 ? 'text-green-500' : 'text-red-500'
             };
@@ -810,10 +805,10 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
 
     if (participants.length === 0) {
         return (
-             <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+            <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
                 <h2 className="text-xl font-bold mb-4 text-green-700">Add an Expense</h2>
                 <p className="text-gray-500">Please add participants to log an expense.</p>
-             </div>
+            </div>
         );
     }
 
@@ -826,11 +821,11 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
                     {splitMethod !== 'item' && <input type="number" value={baseAmount} onChange={e => setBaseAmount(e.target.value)} placeholder="Amount" className="w-1/2 input-style" required min="0" step="0.01" />}
                     <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full input-style" required />
                 </div>
-                 <div className="flex justify-between items-center bg-gray-100 p-2 rounded-lg">
+                <div className="flex justify-between items-center bg-gray-100 p-2 rounded-lg">
                     <span className="font-semibold text-gray-700">Total:</span>
                     <span className="font-bold text-lg text-green-600">${totalAmount.toFixed(2)}</span>
                 </div>
-                
+
                 <button type="button" onClick={() => setShowOptional(!showOptional)} className="text-sm text-green-600 font-semibold">
                     {showOptional ? 'Hide Details' : 'Add Details (Tips, Tax, etc.)'}
                 </button>
@@ -842,15 +837,15 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
                                 <label className="text-xs text-gray-600">Tips</label>
                                 <input type="number" value={tips} onChange={e => setTips(e.target.value)} placeholder="0.00" className="w-full input-style !p-2" min="0" step="0.01" />
                             </div>
-                             <div>
+                            <div>
                                 <label className="text-xs text-gray-600">Tax</label>
                                 <input type="number" value={tax} onChange={e => setTax(e.target.value)} placeholder="0.00" className="w-full input-style !p-2" min="0" step="0.01" />
                             </div>
-                             <div>
+                            <div>
                                 <label className="text-xs text-gray-600">Service Charge</label>
                                 <input type="number" value={serviceCharge} onChange={e => setServiceCharge(e.target.value)} placeholder="0.00" className="w-full input-style !p-2" min="0" step="0.01" />
                             </div>
-                             <div>
+                            <div>
                                 <label className="text-xs text-gray-600">Other Charges</label>
                                 <input type="number" value={otherCharges} onChange={e => setOtherCharges(e.target.value)} placeholder="0.00" className="w-full input-style !p-2" min="0" step="0.01" />
                             </div>
@@ -858,7 +853,7 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
                         <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add notes..." className="w-full input-style" rows="2"></textarea>
                     </div>
                 )}
-                
+
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Paid by:</label>
                     <select value={paidBy} onChange={e => setPaidBy(e.target.value)} className="w-full input-style">
@@ -867,13 +862,36 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
                 </div>
 
                 <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Type (Optional)</label>
+                    <select value={expenseType} onChange={e => setExpenseType(e.target.value)} className="w-full input-style">
+                        <option>🧾 General</option>
+                        <option>🍔 Food</option>
+                        <option>🚗 Transport</option>
+                        <option>🛒 Groceries</option>
+                        <option>💡 Utilities</option>
+                        <option>🎬 Entertainment</option>
+                        <option>🏨 Lodging</option>
+                        <option>✈️ Airplane</option>
+                        <option>💰 Lending</option>
+                    </select>
+                </div>
+
+                <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Split method:</label>
                     <div className="flex gap-4 flex-wrap">
-                        {['evenly', 'amount', 'percentage', 'item'].map(method => (
-                             <label key={method} className="flex items-center gap-2 text-sm">
-                                <input type="radio" name="splitMethod" value={method} checked={splitMethod === method} onChange={(e) => setSplitMethod(e.target.value)} className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"/>
+                        {['evenly', 'item', 'amount', 'percentage'].map(method => (
+                            <label key={method} className="flex items-center gap-1 text-sm">
+                                <input type="radio" name="splitMethod" value={method} checked={splitMethod === method} onChange={(e) => setSplitMethod(e.target.value)} className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300" />
                                 {method.charAt(0).toUpperCase() + method.slice(1)}
-                             </label>
+                                {method === 'item' && (
+                                    <div className="relative group">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+                                        <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 w-max max-w-xs px-2 py-1 bg-gray-800 text-white text-xs rounded-md invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity">
+                                            Enter each person's subtotal. Tips, tax, and other charges will be split proportionally.
+                                        </span>
+                                    </div>
+                                )}
+                            </label>
                         ))}
                     </div>
                 </div>
@@ -890,41 +908,41 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
                     <div className="space-y-2">
                         {sortedParticipants.map(p => (
                             <div key={p.id} className="flex items-center justify-between gap-4">
-                               <div className="flex items-center flex-grow">
-                                 <input id={`split-${p.id}`} type="checkbox" checked={splitBetween.includes(p.name)} onChange={() => handleSplitBetweenChange(p.name)} className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
-                                 <label htmlFor={`split-${p.id}`} className="ml-3 block text-sm text-gray-800">{p.name}</label>
-                               </div>
-                               {splitBetween.includes(p.name) && (
-                                   <div className="flex items-center gap-2">
-                                       {splitMethod === 'percentage' && totalAmount > 0 && (
-                                           <span className="text-xs text-gray-500 w-16 text-right">
-                                               (${(totalAmount * (parseFloat(splitValues[p.name]) || 0) / 100).toFixed(2)})
-                                           </span>
-                                       )}
-                                       {(splitMethod === 'amount' || splitMethod === 'percentage' || splitMethod === 'item') && (
-                                           <div className="flex items-center">
-                                               {(splitMethod === 'amount' || splitMethod === 'item') && <span className="text-gray-500 mr-1">$</span>}
-                                               <input 
-                                                 type="number" 
-                                                 value={splitMethod === 'item' ? (itemized[p.name] || '') : (splitValues[p.name] || '')} 
-                                                 onChange={(e) => splitMethod === 'item' ? handleItemizedValueChange(p.name, e.target.value) : handleSplitValueChange(p.name, e.target.value)} 
-                                                 className="input-style no-spinner !p-1 !w-24 text-right"
-                                                 placeholder="0.00"
-                                                 min="0"
-                                                 step="0.01"
-                                               />
-                                               {splitMethod === 'percentage' && <span className="text-gray-500 ml-1">%</span>}
-                                           </div>
-                                       )}
-                                   </div>
-                               )}
+                                <div className="flex items-center flex-grow">
+                                    <input id={`split-${p.id}`} type="checkbox" checked={splitBetween.includes(p.name)} onChange={() => handleSplitBetweenChange(p.name)} className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                                    <label htmlFor={`split-${p.id}`} className="ml-3 block text-sm text-gray-800">{p.name}</label>
+                                </div>
+                                {splitBetween.includes(p.name) && (
+                                    <div className="flex items-center gap-2">
+                                        {splitMethod === 'percentage' && totalAmount > 0 && (
+                                            <span className="text-xs text-gray-500 w-16 text-right">
+                                                (${(totalAmount * (parseFloat(splitValues[p.name]) || 0) / 100).toFixed(2)})
+                                            </span>
+                                        )}
+                                        {(splitMethod === 'amount' || splitMethod === 'percentage' || splitMethod === 'item') && (
+                                            <div className="flex items-center">
+                                                {(splitMethod === 'amount' || splitMethod === 'item') && <span className="text-gray-500 mr-1">$</span>}
+                                                <input
+                                                    type="number"
+                                                    value={splitMethod === 'item' ? (itemized[p.name] || '') : (splitValues[p.name] || '')}
+                                                    onChange={(e) => splitMethod === 'item' ? handleItemizedValueChange(p.name, e.target.value) : handleSplitValueChange(p.name, e.target.value)}
+                                                    className="input-style no-spinner !p-1 !w-24 text-right"
+                                                    placeholder="0.00"
+                                                    min="0"
+                                                    step="0.01"
+                                                />
+                                                {splitMethod === 'percentage' && <span className="text-gray-500 ml-1">%</span>}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
                 </div>
-                
+
                 {error && <p className="text-red-500 text-sm bg-red-100 p-3 rounded-lg">{error}</p>}
-                
+
                 <button type="submit" className="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">{isEditMode ? 'Save Changes' : 'Add Expense'}</button>
             </form>
         </div>
@@ -995,7 +1013,7 @@ const RecordPaymentForm = ({ participants, onAddExpense }) => {
                         </select>
                     </div>
                 </div>
-                 <div className="flex gap-4">
+                <div className="flex gap-4">
                     <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Amount" className="w-1/2 input-style" required min="0.01" step="0.01" />
                     <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-1/2 input-style" required />
                 </div>
@@ -1016,51 +1034,88 @@ const RecordPaymentForm = ({ participants, onAddExpense }) => {
     );
 };
 
-const ExpenseList = ({ expenses, onRemoveExpense, onEditExpense, onViewExpense, viewOptions }) => {
+const ExpenseList = ({ expenses, onRemoveExpense, onEditExpense, onViewExpense, participants }) => {
+    const [sortOrder, setSortOrder] = useState('desc');
+    const [historyFilter, setHistoryFilter] = useState('all');
+    const [memberFilter, setMemberFilter] = useState('all');
+    const expenseTypeIcons = {
+        Food: '🍔', Transport: '🚗', Groceries: '🛒',
+        Utilities: '💡', Entertainment: '🎬', General: '🧾',
+        Lodging: '🏨', Airplane: '✈️', Lending: '💰'
+    };
+
     const sortedExpenses = useMemo(() => {
         let filtered = expenses;
-        if (viewOptions.mode === 'filter' && viewOptions.person) {
-            filtered = expenses.filter(exp => {
+        if (memberFilter !== 'all') {
+            filtered = filtered.filter(exp => {
                 const involved = new Set([exp.paidBy, ...(exp.splitBetween || [])]);
-                return involved.has(viewOptions.person);
+                return involved.has(memberFilter);
             });
         }
-        return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-    }, [expenses, viewOptions]);
+        if (historyFilter === 'expenses') {
+            filtered = filtered.filter(exp => !exp.isPayment);
+        } else if (historyFilter === 'payments') {
+            filtered = filtered.filter(exp => exp.isPayment);
+        }
+
+        return filtered.sort((a, b) => {
+            if (sortOrder === 'desc') {
+                return new Date(b.date) - new Date(a.date);
+            }
+            return new Date(a.date) - new Date(b.date);
+        });
+    }, [expenses, memberFilter, sortOrder, historyFilter]);
 
     return (
         <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-            <h2 className="text-xl font-bold mb-4 text-green-700">History</h2>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-green-700">History</h2>
+                <div className="relative group">
+                    <button onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')} className="p-2 rounded-full hover:bg-gray-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-300 ${sortOrder === 'asc' ? 'rotate-180' : ''}`}><path d="M12 5v14M18 13l-6 6M6 13l6 6" /></svg>
+                    </button>
+                    <span className="pointer-events-none absolute bottom-full mb-2 w-max px-2 py-1 bg-gray-800 text-white text-xs rounded-md invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity">
+                        Sort by date
+                    </span>
+                </div>
+            </div>
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
+                <div className="flex gap-2">
+                    <button onClick={() => setHistoryFilter('all')} className={`px-3 py-1 text-sm rounded-full ${historyFilter === 'all' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}>All</button>
+                    <button onClick={() => setHistoryFilter('expenses')} className={`px-3 py-1 text-sm rounded-full ${historyFilter === 'expenses' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Expenses</button>
+                    <button onClick={() => setHistoryFilter('payments')} className={`px-3 py-1 text-sm rounded-full ${historyFilter === 'payments' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Payments</button>
+                </div>
+                <select onChange={(e) => setMemberFilter(e.target.value)} value={memberFilter} className="w-full sm:w-auto input-style !p-1.5 text-sm">
+                    <option value="all">All Members</option>
+                    {participants.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                </select>
+            </div>
             {sortedExpenses.length > 0 ? (
-                <div className="space-y-3 max-h-[80vh] overflow-y-auto pr-2">
-                    {sortedExpenses.map(exp => {
-                        const isHighlighted = viewOptions.mode === 'highlight' && viewOptions.person && 
-                                             (exp.paidBy === viewOptions.person || (exp.splitBetween && exp.splitBetween.includes(viewOptions.person)));
-                        return (
-                            <div key={exp.id} className={`bg-gray-50 border-2 p-4 rounded-lg relative group ${isHighlighted ? 'border-green-500' : 'border-gray-200'}`}>
-                                <div className="absolute top-2 right-2 flex gap-1">
-                                    <button onClick={() => onViewExpense(exp)} title="View Details" className="p-1 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </button>
-                                    {!exp.isPayment && <button onClick={() => onEditExpense(exp)} title="Edit Expense" className="p-1 text-gray-400 hover:text-yellow-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                    </button>}
-                                    <button onClick={() => onRemoveExpense(exp.id)} title="Remove Expense" className="p-1 text-gray-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl leading-none">&times;</button>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {exp.isPayment && <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-500 flex-shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>}
-                                    <p className="font-bold text-gray-800 truncate">{exp.description}</p>
-                                </div>
-                                <p className="text-gray-700 text-lg">${exp.amount.toFixed(2)}</p>
-                                <p className="text-sm text-gray-500">
-                                    {exp.isPayment ? `On ${exp.date} via ${exp.paymentMethod}` : `Paid by ${exp.paidBy} on ${exp.date}`}
-                                </p>
+                <div className="space-y-3">
+                    {sortedExpenses.map(exp => (
+                        <div key={exp.id} className={`bg-gray-50 border-2 p-4 rounded-lg relative group border-gray-200`}>
+                            <div className="absolute top-2 right-2 flex gap-1">
+                                <button onClick={() => onViewExpense(exp)} title="View Details" className="p-1 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                                </button>
+                                {!exp.isPayment && <button onClick={() => onEditExpense(exp)} title="Edit Expense" className="p-1 text-gray-400 hover:text-yellow-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                                </button>}
+                                <button onClick={() => onRemoveExpense(exp.id)} title="Remove Expense" className="p-1 text-gray-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity text-xl leading-none">&times;</button>
                             </div>
-                        )
-                    })}
+                            <div className="flex items-center gap-2">
+                                <span className="text-xl">{exp.isPayment ? '💵' : (expenseTypeIcons[exp.expenseType] || '🧾')}</span>
+                                <p className="font-bold text-gray-800 truncate">{exp.description}</p>
+                            </div>
+                            <p className="text-gray-700 text-lg">${exp.amount.toFixed(2)}</p>
+                            <p className="text-sm text-gray-500">
+                                {exp.isPayment ? `${exp.date}: Via ${exp.paymentMethod}` : `${exp.date}: Paid by ${exp.paidBy}`}
+                            </p>
+                        </div>
+                    ))}
                 </div>
             ) : (
-                <p className="text-gray-500">No expenses or payments recorded yet.</p>
+                <p className="text-gray-500">No transactions of this type.</p>
             )}
         </div>
     );
@@ -1070,11 +1125,11 @@ const SplitBreakdownDisplay = ({ expense }) => {
     if (expense.isPayment) {
         return null;
     }
-    
+
     let breakdownTitle = '';
     let breakdownList = [];
 
-    switch(expense.splitMethod) {
+    switch (expense.splitMethod) {
         case 'evenly':
             breakdownTitle = 'Split Evenly';
             const share = expense.amount / expense.splitBetween.length;
@@ -1138,7 +1193,7 @@ const ExpenseDetail = ({ expense }) => {
             <div className="space-y-3 text-gray-700">
                 <p><strong className="text-gray-800">Description:</strong> {expense.description}</p>
                 <p><strong className="text-gray-800">Total Amount:</strong> <span className="font-mono text-lg">${expense.amount.toFixed(2)}</span></p>
-                
+
                 {!expense.isPayment && hasExtraCharges && (
                     <div className="pl-4 text-sm space-y-1 text-gray-500 border-l-2 ml-2">
                         <p>Base: ${expense.baseAmount.toFixed(2)}</p>
@@ -1161,11 +1216,11 @@ const ExpenseDetail = ({ expense }) => {
                     <div className="pt-2">
                         <h3 className="text-lg font-bold text-gray-800 mb-2">Split Breakdown</h3>
                         <div className="bg-gray-100 p-3 rounded-lg text-sm">
-                           <SplitBreakdownDisplay expense={expense} />
+                            <SplitBreakdownDisplay expense={expense} />
                         </div>
                     </div>
                 )}
-                 <button onClick={() => downloadAsFile(`receipt-${expense.description.replace(/\s+/g, '-')}.txt`, formatReceipt(expense))} className="w-full mt-4 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">Download Receipt</button>
+                <button onClick={() => downloadAsFile(`receipt-${expense.description.replace(/\s+/g, '-')}.txt`, formatReceipt(expense))} className="w-full mt-4 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">Download Receipt</button>
             </div>
         </div>
     );
@@ -1206,7 +1261,7 @@ const DebtDetail = ({ debt, expenses }) => {
                 if (exp.splitMethod === 'evenly' && exp.splitBetween.includes(debt.to)) {
                     creditorShare = exp.amount / exp.splitBetween.length;
                 } else if (exp.splitValues && exp.splitValues[debt.to]) {
-                     if (exp.splitMethod === 'amount') {
+                    if (exp.splitMethod === 'amount') {
                         creditorShare = exp.splitValues[debt.to];
                     } else if (exp.splitMethod === 'percentage') {
                         creditorShare = exp.amount * (exp.splitValues[debt.to] / 100);
@@ -1217,7 +1272,7 @@ const DebtDetail = ({ debt, expenses }) => {
                     const proportion = baseTotal > 0 ? exp.itemized[debt.to] / baseTotal : 0;
                     creditorShare = exp.itemized[debt.to] + (extras * proportion);
                 }
-                 if (creditorShare > 0) {
+                if (creditorShare > 0) {
                     transactions.push({ description: `"${exp.description}" (You paid for ${debt.to})`, amount: -creditorShare, type: 'credit', date: exp.date });
                     netOwed -= creditorShare;
                 }
@@ -1252,7 +1307,7 @@ const DebtDetail = ({ debt, expenses }) => {
                     <div key={i} className="flex justify-between items-center bg-gray-100 p-2 rounded-lg">
                         <div className="flex flex-col">
                             <span className="text-gray-700">{item.description}</span>
-                             <span className="text-xs text-gray-500">{item.date}</span>
+                            <span className="text-xs text-gray-500">{item.date}</span>
                         </div>
                         <span className={`font-mono ${item.type === 'debt' ? 'text-red-600' : 'text-green-600'}`}>
                             {item.type === 'credit' ? '-' : ''}${Math.abs(item.amount).toFixed(2)}
@@ -1269,41 +1324,39 @@ const DebtDetail = ({ debt, expenses }) => {
 };
 
 
-const DebtsSummary = ({ debts, onViewDebt, viewOptions }) => {
-    const sortedDebts = useMemo(() => {
-        let filtered = debts;
-        if (viewOptions.mode === 'filter' && viewOptions.person) {
-            filtered = debts.filter(d => d.from === viewOptions.person || d.to === viewOptions.person);
-        }
-        return filtered.sort((a, b) => a.from.localeCompare(b.from) || a.to.localeCompare(b.to));
-    }, [debts, viewOptions]);
+const SettleUpSection = ({ debts, onViewDebt }) => {
+    const groupedDebts = useMemo(() => {
+        const groups = {};
+        debts.forEach(debt => {
+            if (!groups[debt.from]) {
+                groups[debt.from] = [];
+            }
+            groups[debt.from].push(debt);
+        });
+        return groups;
+    }, [debts]);
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+        <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200 w-full">
             <h2 className="text-xl font-bold mb-4 text-green-700">Settle Up</h2>
-            {sortedDebts.length > 0 ? (
-                <ul className="space-y-3">
-                    {sortedDebts.map((debt, i) => {
-                        const isHighlighted = viewOptions.mode === 'highlight' && viewOptions.person && 
-                                             (debt.from === viewOptions.person || debt.to === viewOptions.person);
-                        const highlightColor = isHighlighted ? (debt.from === viewOptions.person ? 'border-red-500' : 'border-green-500') : 'border-gray-200';
-                        return (
-                            <li key={i} className={`bg-gray-50 border-2 p-4 rounded-lg flex items-center justify-between gap-4 flex-wrap ${highlightColor}`}>
-                                <div className="flex items-center gap-3">
-                                    <span className="font-bold text-red-600">{debt.from}</span>
-                                    <span className="text-gray-400">&rarr;</span>
-                                    <span className="font-bold text-green-600">{debt.to}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="font-mono text-lg text-gray-800">${debt.amount.toFixed(2)}</span>
-                                    <button onClick={() => onViewDebt(debt)} title="View Details" className="p-1 text-gray-400 hover:text-blue-600">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                                    </button>
-                                </div>
-                            </li>
-                        )
-                    })}
-                </ul>
+            {Object.keys(groupedDebts).length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {Object.entries(groupedDebts).map(([debtor, debtsList]) => (
+                        <div key={debtor} className="bg-gray-50 border border-gray-200 p-2 rounded-lg">
+                            <h3 className="font-semibold text-red-600 mb-1 text-sm">{debtor} owes:</h3>
+                            <ul className="space-y-1">
+                                {debtsList.map((debt, i) => (
+                                    <li key={i} className="flex flex-col items-start text-xs">
+                                        <div className="flex justify-between w-full">
+                                            <span>&rarr; {debt.to}</span>
+                                            <span className="font-mono text-gray-800">${debt.amount.toFixed(2)}</span>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
+                </div>
             ) : (
                 <p className="text-gray-500">All settled up!</p>
             )}
@@ -1311,37 +1364,98 @@ const DebtsSummary = ({ debts, onViewDebt, viewOptions }) => {
     );
 };
 
-const TotalsDetail = ({ participants, expenses }) => {
-    const { totalsByPerson, groupTotal } = useMemo(() => {
-        const totals = participants.reduce((acc, p) => ({ ...acc, [p.name]: 0 }), {});
-        let groupTotal = 0;
+const TotalsDetail = ({ participants, expenses, debts }) => {
+    const stats = useMemo(() => {
+        const expensesOnly = expenses.filter(exp => !exp.isPayment);
+        const numberOfExpenses = expensesOnly.length;
 
-        expenses.forEach(exp => {
-            if (!exp.isPayment) {
-                groupTotal += exp.amount;
-                if (totals[exp.paidBy] !== undefined) {
-                    totals[exp.paidBy] += exp.amount;
-                }
+        if (numberOfExpenses === 0) {
+            return {
+                totalsByPerson: participants.reduce((acc, p) => ({ ...acc, [p.name]: { paid: 0, net: 0 } }), {}),
+                groupTotal: 0,
+                numberOfExpenses: 0,
+                highestExpense: null,
+                lowestExpense: null,
+                averageExpense: 0,
+            };
+        }
+
+        const totalsByPerson = participants.reduce((acc, p) => ({ ...acc, [p.name]: { paid: 0, net: 0 } }), {});
+        let groupTotal = 0;
+        let highestExpense = { amount: -Infinity };
+        let lowestExpense = { amount: Infinity };
+
+        expensesOnly.forEach(exp => {
+            groupTotal += exp.amount;
+            if (totalsByPerson[exp.paidBy] !== undefined) {
+                totalsByPerson[exp.paidBy].paid += exp.amount;
             }
+            if (exp.amount > highestExpense.amount) highestExpense = exp;
+            if (exp.amount < lowestExpense.amount) lowestExpense = exp;
         });
-        return { totalsByPerson: totals, groupTotal };
-    }, [participants, expenses]);
+
+        debts.forEach(debt => {
+            totalsByPerson[debt.to].net += debt.amount;
+            totalsByPerson[debt.from].net -= debt.amount;
+        });
+
+        const averageExpense = groupTotal / numberOfExpenses;
+
+        return {
+            totalsByPerson,
+            groupTotal,
+            numberOfExpenses,
+            highestExpense,
+            lowestExpense,
+            averageExpense
+        };
+    }, [participants, expenses, debts]);
 
     return (
         <div>
-            <h2 className="text-2xl font-bold mb-2 text-green-700">Overall Expenses</h2>
-            <p className="text-sm text-gray-500 mb-4">Total expenses for the whole group.</p>
-            <div className="space-y-2">
-                {Object.entries(totalsByPerson).map(([name, total]) => (
-                    <div key={name} className="flex justify-between items-center bg-gray-100 p-3 rounded-lg">
-                        <span className="font-medium text-gray-700">{name} paid:</span>
-                        <span className="font-mono text-lg text-gray-800">${total.toFixed(2)}</span>
+            <h2 className="text-2xl font-bold mb-2 text-green-700">Spending Overview</h2>
+            <p className="text-sm text-gray-500 mb-6">A summary of the group's spending and balances.</p>
+
+            <div className="mb-6 bg-gray-100 p-4 rounded-lg">
+                <h3 className="text-lg font-bold text-gray-800 mb-2">Group Statistics</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="bg-white p-3 rounded-md shadow-sm">
+                        <p className="text-gray-500">Total Expenses</p>
+                        <p className="font-bold text-lg text-green-600">{stats.numberOfExpenses}</p>
                     </div>
-                ))}
+                    <div className="bg-white p-3 rounded-md shadow-sm">
+                        <p className="text-gray-500">Average Expense</p>
+                        <p className="font-mono text-lg text-green-600">${stats.averageExpense.toFixed(2)}</p>
+                    </div>
+                    {stats.highestExpense && (
+                        <div className="bg-white p-3 rounded-md shadow-sm col-span-2">
+                            <p className="text-gray-500">Highest Expense</p>
+                            <p className="font-bold text-gray-800 truncate">{stats.highestExpense.description} (${stats.highestExpense.amount.toFixed(2)})</p>
+                        </div>
+                    )}
+                    {stats.lowestExpense && (
+                        <div className="bg-white p-3 rounded-md shadow-sm col-span-2">
+                            <p className="text-gray-500">Lowest Expense</p>
+                            <p className="font-bold text-gray-800 truncate">{stats.lowestExpense.description} (${stats.lowestExpense.amount.toFixed(2)})</p>
+                        </div>
+                    )}
+                </div>
             </div>
-             <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+
+            <div>
+                <h3 className="text-lg font-bold text-gray-800 mb-2">Member Expenses</h3>
+                <div className="space-y-2">
+                    {Object.entries(stats.totalsByPerson).map(([name, data]) => (
+                        <div key={name} className="flex justify-between items-center bg-gray-100 p-3 rounded-lg">
+                            <span className="font-medium text-gray-700">{name} paid:</span>
+                            <span className="font-mono text-lg text-gray-800">${data.paid.toFixed(2)}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
                 <span className="text-xl font-bold text-gray-800">Group Total</span>
-                <span className="text-xl font-bold font-mono text-gray-800">${groupTotal.toFixed(2)}</span>
+                <span className="text-xl font-bold font-mono text-gray-800">${stats.groupTotal.toFixed(2)}</span>
             </div>
         </div>
     );
@@ -1362,7 +1476,7 @@ const ParticipantDetail = ({ participant, expenses, debts, participants }) => {
         const totalPaid = expenses
             .filter(exp => !exp.isPayment && exp.paidBy === participant.name)
             .reduce((sum, exp) => sum + exp.amount, 0);
-        
+
         const totalOwedToUser = debts
             .filter(debt => debt.to === participant.name)
             .reduce((sum, debt) => sum + debt.amount, 0);
@@ -1377,7 +1491,7 @@ const ParticipantDetail = ({ participant, expenses, debts, participants }) => {
     return (
         <div>
             <div className="flex items-center gap-4 mb-6">
-                 <span className={`w-16 h-16 rounded-full ${participantColor} text-white flex items-center justify-center font-bold text-3xl flex-shrink-0`}>
+                <span className={`w-16 h-16 rounded-full ${participantColor} text-white flex items-center justify-center font-bold text-3xl flex-shrink-0`}>
                     {participant.name.charAt(0).toUpperCase()}
                 </span>
                 <h2 className="text-3xl font-bold text-gray-800">{participant.name}'s Summary</h2>
@@ -1425,7 +1539,7 @@ const SearchTransactions = ({ participants, expenses }) => {
         return expenses.filter(exp => {
             const involved = new Set([exp.paidBy, ...(exp.splitBetween || [])]);
             return involved.has(p1) && involved.has(p2);
-        }).sort((a,b) => new Date(b.date) - new Date(a.date));
+        }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
     }, [searchCriteria, expenses]);
 
@@ -1458,58 +1572,6 @@ const SearchTransactions = ({ participants, expenses }) => {
         </div>
     );
 };
-
-const MemberViewModal = ({ participants, currentOptions, onApply, onClear }) => {
-    const [person, setPerson] = useState(currentOptions.person || '');
-    const [mode, setMode] = useState(currentOptions.mode !== 'none' ? currentOptions.mode : 'highlight');
-    
-    const sortedParticipants = useMemo(() => [...participants].sort((a, b) => a.name.localeCompare(b.name)), [participants]);
-
-    useEffect(() => {
-        if (!currentOptions.person && sortedParticipants.length > 0) {
-            setPerson(sortedParticipants[0].name);
-        }
-    }, [sortedParticipants, currentOptions]);
-
-    const handleApply = () => {
-        if(person) {
-            onApply({ person, mode });
-        }
-    };
-    
-    return (
-        <div>
-            <h2 className="text-2xl font-bold mb-2 text-green-700">Member View</h2>
-            <p className="text-sm text-gray-500 mb-4">Focus on a single member's transactions by highlighting or filtering the history.</p>
-            <div className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Member</label>
-                    <select value={person} onChange={e => setPerson(e.target.value)} className="w-full input-style">
-                        {sortedParticipants.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">View Mode</label>
-                    <div className="flex gap-4">
-                        <label className="flex items-center gap-2">
-                            <input type="radio" value="highlight" checked={mode === 'highlight'} onChange={e => setMode(e.target.value)} className="h-4 w-4 text-green-600 focus:ring-green-500"/>
-                            Highlight
-                        </label>
-                         <label className="flex items-center gap-2">
-                            <input type="radio" value="filter" checked={mode === 'filter'} onChange={e => setMode(e.target.value)} className="h-4 w-4 text-green-600 focus:ring-green-500"/>
-                            Filter
-                        </label>
-                    </div>
-                </div>
-                <div className="flex justify-end gap-4 pt-4">
-                    <button onClick={onClear} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors">Clear View</button>
-                    <button onClick={handleApply} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">Apply</button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 
 export default function MainPage() {
     const initialState = {
