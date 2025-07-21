@@ -225,9 +225,9 @@ const Modal = ({ children, onClose }) => (
 
 const ConfirmModal = ({ title, message, onConfirm, onCancel }) => (
     <Modal onClose={onCancel}>
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">{title}</h2>
-        <p className="text-gray-600 mb-6">{message}</p>
-        <div className="flex justify-end gap-4">
+        <h2 className="text-2xl font-bold mb-4 text-gray-800 text-center">{title}</h2>
+        <p className="text-gray-600 mb-6 text-center">{message}</p>
+        <div className="flex justify-center gap-4">
             <button onClick={onCancel} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors">Cancel</button>
             <button onClick={onConfirm} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors">Confirm</button>
         </div>
@@ -268,7 +268,7 @@ const Toast = ({ message, type = 'error', onDismiss }) => {
     return (
         <div
             onTransitionEnd={handleTransitionEnd}
-            className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg text-white shadow-lg flex items-center gap-4 transform transition-all duration-500 ease-in-out ${colors[type]} ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}>
+            className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg text-white shadow-lg flex items-center gap-4 transform transition-all duration-500 ease-in-out ${colors[type]} ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'} z-[60]`}>
             <span>{message}</span>
             <button onClick={handleDismissClick} className="text-xl leading-none">&times;</button>
         </div>
@@ -369,6 +369,8 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
     const [showSearch, setShowSearch] = useState(false);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [toast, setToast] = useState({ message: '', type: 'error' });
+    const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
+    const [mobileFormType, setMobileFormType] = useState(null);
 
     useEffect(() => {
         const handleKeyDown = (event) => {
@@ -380,6 +382,8 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
                 setViewingParticipant(null);
                 setShowSearch(false);
                 setShowResetConfirm(false);
+                setMobileFormType(null);
+                setIsFabMenuOpen(false);
             }
         };
 
@@ -431,6 +435,21 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
         updateGroup({ expenses: updatedExpenses });
     };
 
+    const handleFabMenuClick = (type) => {
+        if (participants.length === 0) {
+            setToast({ message: "Please add members before adding an expense or payment.", type: 'error' });
+            setIsFabMenuOpen(false);
+            return;
+        }
+        if (type === 'payment' && participants.length < 2) {
+            setToast({ message: "You need at least two members to record a payment.", type: 'error' });
+            setIsFabMenuOpen(false);
+            return;
+        }
+        setMobileFormType(type);
+        setIsFabMenuOpen(false);
+    };
+
     const { debts } = useMemo(() => calculateBalances(expenses, participants), [expenses, participants]);
 
     return (
@@ -463,9 +482,9 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                    <div className="lg:col-span-2 space-y-8">
-                        <AddExpenseForm participants={participants} onAddExpense={addExpense} />
-                        <RecordPaymentForm participants={participants} onAddExpense={addExpense} />
+                    <div className="hidden lg:block lg:col-span-2 space-y-8">
+                        <AddExpenseForm participants={participants} onAddExpense={addExpense} setToast={setToast} />
+                        <RecordPaymentForm participants={participants} onAddExpense={addExpense} setToast={setToast} />
                     </div>
 
                     <div className="lg:col-span-3">
@@ -481,6 +500,7 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
                         onAddExpense={updateExpense}
                         expenseToEdit={editingExpense}
                         onDone={() => setEditingExpense(null)}
+                        setToast={setToast}
                     />
                 </Modal>
             )}
@@ -521,6 +541,51 @@ const GroupView = ({ groupData, setGroupData, resetApp }) => {
                     }}
                     onCancel={() => setShowResetConfirm(false)}
                 />
+            )}
+
+            {/* Mobile FAB and Modal */}
+            <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center">
+                {isFabMenuOpen && (
+                    <div className="flex flex-col items-center mb-4 space-y-3">
+                        <button onClick={() => handleFabMenuClick('payment')} className="flex items-center gap-2 bg-teal-500 text-white px-4 py-2 rounded-full shadow-lg hover:bg-teal-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            <span>Record Payment</span>
+                        </button>
+                        <button onClick={() => handleFabMenuClick('expense')} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-green-700 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                            <span>Add Expense</span>
+                        </button>
+                    </div>
+                )}
+                <button onClick={() => setIsFabMenuOpen(!isFabMenuOpen)} className="w-16 h-16 bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-green-700 transition-transform duration-300 transform hover:scale-110">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-300 ${isFabMenuOpen ? 'rotate-45' : ''}`}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+            </div>
+
+            {mobileFormType && (
+                <Modal onClose={() => setMobileFormType(null)}>
+                    {mobileFormType === 'expense' && (
+                        <AddExpenseForm
+                            participants={participants}
+                            onAddExpense={(expense) => {
+                                addExpense(expense);
+                                setMobileFormType(null);
+                            }}
+                            onDone={() => setMobileFormType(null)}
+                            setToast={setToast}
+                        />
+                    )}
+                    {mobileFormType === 'payment' && (
+                        <RecordPaymentForm
+                            participants={participants}
+                            onAddExpense={(payment) => {
+                                addExpense(payment);
+                                setMobileFormType(null);
+                            }}
+                            setToast={setToast}
+                        />
+                    )}
+                </Modal>
             )}
         </div>
     );
@@ -626,7 +691,7 @@ const ParticipantsList = ({ participants, onParticipantClick }) => {
 };
 
 
-const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDone }) => {
+const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDone, setToast }) => {
     const [description, setDescription] = useState('');
     const [baseAmount, setBaseAmount] = useState('');
     const [tips, setTips] = useState('');
@@ -736,9 +801,24 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
         }
     };
 
+    const handleSelectAll = () => {
+        setSplitBetween(participants.map(p => p.name));
+    };
+
+    const handleDeselectAll = () => {
+        setSplitBetween([]);
+        setItemized({});
+        setSplitValues({});
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         setError('');
+
+        if (participants.length === 0) {
+            if (setToast) setToast({ message: 'Please add at least one member to the group first.', type: 'error' });
+            return;
+        }
 
         const finalBaseAmount = splitMethod === 'item' ? itemizedBaseAmount : parseFloat(baseAmount);
 
@@ -859,16 +939,6 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
     const sortedParticipants = useMemo(() => {
         return [...participants].sort((a, b) => a.name.localeCompare(b.name));
     }, [participants]);
-
-
-    if (participants.length === 0) {
-        return (
-            <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-                <h2 className="text-xl font-bold mb-4 text-green-700">Add an Expense</h2>
-                <p className="text-gray-500">Please add participants to log an expense.</p>
-            </div>
-        );
-    }
 
     return (
         <div className={isEditMode ? '' : 'bg-white p-6 rounded-2xl shadow-md border border-gray-200'}>
@@ -1000,11 +1070,10 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
                 <div>
                     <div className="flex justify-between items-center mb-2">
                         <label className="block text-sm font-medium text-gray-700">Split between:</label>
-                        {(splitMethod === 'amount' || splitMethod === 'percentage') && totalAmount > 0 && (
-                            <span className={`text-sm font-mono ${remainingColor}`}>
-                                {splitMethod === 'amount' ? `$${remainingAmount.toFixed(2)}` : `${remainingAmount.toFixed(2)}%`} left
-                            </span>
-                        )}
+                        <div className="flex gap-2">
+                            <button type="button" onClick={handleSelectAll} className="text-xs font-semibold text-green-600 hover:text-green-800">Select All</button>
+                            <button type="button" onClick={handleDeselectAll} className="text-xs font-semibold text-gray-500 hover:text-gray-700">Deselect All</button>
+                        </div>
                     </div>
                     <div className="space-y-2">
                         {sortedParticipants.map(p => (
@@ -1050,7 +1119,7 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
     );
 };
 
-const RecordPaymentForm = ({ participants, onAddExpense }) => {
+const RecordPaymentForm = ({ participants, onAddExpense, setToast }) => {
     const [from, setFrom] = useState('');
     const [to, setTo] = useState('');
     const [amount, setAmount] = useState('');
@@ -1071,6 +1140,12 @@ const RecordPaymentForm = ({ participants, onAddExpense }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         setError('');
+
+        if (participants.length < 2) {
+            if (setToast) setToast({ message: 'You need at least two members to record a payment.', type: 'error' });
+            return;
+        }
+
         if (!from || !to || !amount || from === to) {
             setError("Please select two different people and enter an amount.");
             return;
@@ -1092,8 +1167,6 @@ const RecordPaymentForm = ({ participants, onAddExpense }) => {
         setNotes('');
         setError('');
     };
-
-    if (participants.length < 2) return null;
 
     return (
         <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
