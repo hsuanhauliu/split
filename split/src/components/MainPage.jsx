@@ -68,8 +68,12 @@ const formatReceipt = (expense) => {
                 }).join('\n');
                 return `Split by ${exp.splitMethod}:\n${details}`;
             case 'item':
-                const itemDetails = Object.entries(exp.itemized).map(([name, value]) => `  - ${name}: $${value.toFixed(2)}`).join('\n');
-                return `Split by item:\n${itemDetails}`;
+                const itemDetails = Object.entries(exp.itemized).map(([name, value]) => `  - ${name} (item): $${value.toFixed(2)}`).join('\n');
+                let receiptText = `Split by item:\n${itemDetails}`;
+                if (exp.amountToSplit && exp.amountToSplit > 0) {
+                    receiptText += `\n  - Shared Amount: $${exp.amountToSplit.toFixed(2)} (split evenly)`;
+                }
+                return receiptText;
             default:
                 return 'Split details unavailable';
         }
@@ -120,7 +124,7 @@ const calculateBalances = (expenses, participants) => {
     }, {});
 
     expenses.forEach(expense => {
-        const { amount, paidBy, splitMethod, splitBetween, splitValues, isPayment, itemized } = expense;
+        const { amount, paidBy, splitMethod, splitBetween, splitValues, isPayment, itemized, amountToSplit } = expense;
         if (!amount || !paidBy) return;
 
         if (isPayment) {
@@ -151,12 +155,24 @@ const calculateBalances = (expenses, participants) => {
                     });
                     break;
                 case 'item':
-                    if (!itemized) break;
-                    const baseTotal = Object.values(itemized).reduce((sum, val) => sum + val, 0);
+                    if (!itemized || !splitBetween || splitBetween.length === 0) break;
+
+                    const baseTotal = expense.baseAmount || 0;
+                    if (baseTotal <= 0) {
+                        const share = amount / splitBetween.length;
+                        splitBetween.forEach(personName => { shares[personName] = share; });
+                        break;
+                    }
+
                     const extras = amount - baseTotal;
-                    Object.entries(itemized).forEach(([personName, itemCost]) => {
-                        const proportion = baseTotal > 0 ? itemCost / baseTotal : 0;
-                        shares[personName] = itemCost + (extras * proportion);
+                    const evenSplitPart = (amountToSplit || 0) / splitBetween.length;
+
+                    splitBetween.forEach(personName => {
+                        const itemCost = itemized[personName] || 0;
+                        const personBase = itemCost + evenSplitPart;
+                        const proportion = personBase / baseTotal;
+                        const personExtras = extras * proportion;
+                        shares[personName] = personBase + personExtras;
                     });
                     break;
                 default:
@@ -625,6 +641,7 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
     const [splitBetween, setSplitBetween] = useState([]);
     const [splitValues, setSplitValues] = useState({});
     const [itemized, setItemized] = useState({});
+    const [amountToSplit, setAmountToSplit] = useState('');
     const [error, setError] = useState('');
     const [expenseType, setExpenseType] = useState('General');
 
@@ -635,14 +652,24 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
         return Object.values(itemized).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
     }, [itemized, splitMethod]);
 
+    const itemizedSubtotal = useMemo(() => {
+        if (splitMethod !== 'item') return 0;
+        return itemizedBaseAmount + (parseFloat(amountToSplit) || 0);
+    }, [itemizedBaseAmount, amountToSplit, splitMethod]);
+
     const totalAmount = useMemo(() => {
-        const base = splitMethod === 'item' ? itemizedBaseAmount : (parseFloat(baseAmount) || 0);
-        return base +
-            (parseFloat(tips) || 0) +
+        let currentTotal = (parseFloat(tips) || 0) +
             (parseFloat(tax) || 0) +
             (parseFloat(serviceCharge) || 0) +
             (parseFloat(otherCharges) || 0);
-    }, [baseAmount, itemizedBaseAmount, tips, tax, serviceCharge, otherCharges, splitMethod]);
+
+        if (splitMethod === 'item') {
+            currentTotal += itemizedBaseAmount + (parseFloat(amountToSplit) || 0);
+        } else {
+            currentTotal += (parseFloat(baseAmount) || 0);
+        }
+        return currentTotal;
+    }, [baseAmount, itemizedBaseAmount, amountToSplit, tips, tax, serviceCharge, otherCharges, splitMethod]);
 
 
     useEffect(() => {
@@ -658,6 +685,7 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
             setPaidBy(expenseToEdit.paidBy);
             setSplitMethod(expenseToEdit.splitMethod);
             setItemized(expenseToEdit.itemized || {});
+            setAmountToSplit(expenseToEdit.amountToSplit?.toString() || '');
             setExpenseType(expenseToEdit.expenseType || 'General');
 
             if (expenseToEdit.splitMethod === 'evenly') {
@@ -683,9 +711,29 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
     };
 
     const handleSplitBetweenChange = (name) => {
-        setSplitBetween(prev =>
-            prev.includes(name) ? prev.filter(p => p !== name) : [...prev, name]
-        );
+        const isCurrentlyIncluded = splitBetween.includes(name);
+
+        if (isCurrentlyIncluded) {
+            // Unchecking the box
+            setSplitBetween(prev => prev.filter(p => p !== name));
+            // Clear the values
+            if (splitMethod === 'item') {
+                setItemized(prev => {
+                    const newItems = { ...prev };
+                    delete newItems[name];
+                    return newItems;
+                });
+            } else if (splitMethod === 'amount' || splitMethod === 'percentage') {
+                setSplitValues(prev => {
+                    const newValues = { ...prev };
+                    delete newValues[name];
+                    return newValues;
+                });
+            }
+        } else {
+            // Checking the box
+            setSplitBetween(prev => [...prev, name]);
+        }
     };
 
     const handleSubmit = (e) => {
@@ -694,7 +742,7 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
 
         const finalBaseAmount = splitMethod === 'item' ? itemizedBaseAmount : parseFloat(baseAmount);
 
-        if (!description || !finalBaseAmount || !paidBy || !date || totalAmount <= 0) {
+        if (!description || (splitMethod !== 'item' && !finalBaseAmount) || !paidBy || !date || totalAmount <= 0) {
             setError("Please fill in a valid description, amount, date, and payer.");
             return;
         }
@@ -703,7 +751,7 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
             id: isEditMode ? expenseToEdit.id : crypto.randomUUID(),
             description,
             amount: totalAmount,
-            baseAmount: finalBaseAmount,
+            baseAmount: splitMethod === 'item' ? (itemizedBaseAmount + (parseFloat(amountToSplit) || 0)) : finalBaseAmount,
             tips: parseFloat(tips) || 0,
             tax: parseFloat(tax) || 0,
             serviceCharge: parseFloat(serviceCharge) || 0,
@@ -719,12 +767,21 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
             const relevantItems = Object.entries(itemized)
                 .filter(([name, value]) => splitBetween.includes(name) && value && parseFloat(value) > 0)
                 .reduce((acc, [name, value]) => ({ ...acc, [name]: parseFloat(value) }), {});
-            if (Object.keys(relevantItems).length === 0) {
-                setError("Please enter item costs for at least one person.");
+
+            if (splitBetween.length === 0) {
+                setError("Please select at least one person to split with.");
                 return;
             }
+            const sharedAmountValue = parseFloat(amountToSplit) || 0;
+            if (Object.keys(relevantItems).length === 0 && sharedAmountValue <= 0) {
+                setError("Please enter item costs or a shared amount.");
+                return;
+            }
+
             expenseData.itemized = relevantItems;
-            expenseData.splitBetween = Object.keys(relevantItems);
+            expenseData.splitBetween = splitBetween;
+            expenseData.amountToSplit = sharedAmountValue;
+
         } else if (splitMethod === 'evenly') {
             if (splitBetween.length === 0) {
                 setError("Please select at least one person to split with evenly.");
@@ -768,6 +825,7 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
             setNotes('');
             setError('');
             setItemized({});
+            setAmountToSplit('');
             setExpenseType('General');
         }
     };
@@ -818,9 +876,15 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
             <form onSubmit={handleSubmit} className="space-y-4">
                 <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (e.g. Dinner)" className="w-full input-style" required />
                 <div className="flex gap-4">
-                    {splitMethod !== 'item' && <input type="number" value={baseAmount} onChange={e => setBaseAmount(e.target.value)} placeholder="Amount" className="w-1/2 input-style" required min="0" step="0.01" />}
+                    {splitMethod !== 'item' && (
+                        <div className="flex items-center w-1/2">
+                            <span className="text-gray-500 mr-2">$</span>
+                            <input type="number" value={baseAmount} onChange={e => setBaseAmount(e.target.value)} placeholder="Amount" className="w-full input-style no-spinner" required min="0" step="0.01" />
+                        </div>
+                    )}
                     <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full input-style" required />
                 </div>
+
                 <div className="flex justify-between items-center bg-gray-100 p-2 rounded-lg">
                     <span className="font-semibold text-gray-700">Total:</span>
                     <span className="font-bold text-lg text-green-600">${totalAmount.toFixed(2)}</span>
@@ -835,19 +899,31 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="text-xs text-gray-600">Tips</label>
-                                <input type="number" value={tips} onChange={e => setTips(e.target.value)} placeholder="0.00" className="w-full input-style !p-2" min="0" step="0.01" />
+                                <div className="flex items-center">
+                                    <span className="text-gray-500 mr-2 text-sm">$</span>
+                                    <input type="number" value={tips} onChange={e => setTips(e.target.value)} placeholder="0.00" className="w-full input-style !p-2 no-spinner" min="0" step="0.01" />
+                                </div>
                             </div>
                             <div>
                                 <label className="text-xs text-gray-600">Tax</label>
-                                <input type="number" value={tax} onChange={e => setTax(e.target.value)} placeholder="0.00" className="w-full input-style !p-2" min="0" step="0.01" />
+                                <div className="flex items-center">
+                                    <span className="text-gray-500 mr-2 text-sm">$</span>
+                                    <input type="number" value={tax} onChange={e => setTax(e.target.value)} placeholder="0.00" className="w-full input-style !p-2 no-spinner" min="0" step="0.01" />
+                                </div>
                             </div>
                             <div>
                                 <label className="text-xs text-gray-600">Service Charge</label>
-                                <input type="number" value={serviceCharge} onChange={e => setServiceCharge(e.target.value)} placeholder="0.00" className="w-full input-style !p-2" min="0" step="0.01" />
+                                <div className="flex items-center">
+                                    <span className="text-gray-500 mr-2 text-sm">$</span>
+                                    <input type="number" value={serviceCharge} onChange={e => setServiceCharge(e.target.value)} placeholder="0.00" className="w-full input-style !p-2 no-spinner" min="0" step="0.01" />
+                                </div>
                             </div>
                             <div>
                                 <label className="text-xs text-gray-600">Other Charges</label>
-                                <input type="number" value={otherCharges} onChange={e => setOtherCharges(e.target.value)} placeholder="0.00" className="w-full input-style !p-2" min="0" step="0.01" />
+                                <div className="flex items-center">
+                                    <span className="text-gray-500 mr-2 text-sm">$</span>
+                                    <input type="number" value={otherCharges} onChange={e => setOtherCharges(e.target.value)} placeholder="0.00" className="w-full input-style !p-2 no-spinner" min="0" step="0.01" />
+                                </div>
                             </div>
                         </div>
                         <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add notes..." className="w-full input-style" rows="2"></textarea>
@@ -896,6 +972,31 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
                     </div>
                 </div>
 
+                {splitMethod === 'item' && (
+                    <div className="flex justify-between items-center bg-gray-100 p-2 rounded-lg -mt-2 mb-2">
+                        <span className="font-semibold text-gray-700">Subtotal (Items + Shared):</span>
+                        <span className="font-bold text-lg text-gray-800">${itemizedSubtotal.toFixed(2)}</span>
+                    </div>
+                )}
+
+                {splitMethod === 'item' && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Shared Amount (split evenly)</label>
+                        <div className="flex items-center">
+                            <span className="text-gray-500 mr-2">$</span>
+                            <input
+                                type="number"
+                                value={amountToSplit}
+                                onChange={e => setAmountToSplit(e.target.value)}
+                                placeholder="e.g., for shared items"
+                                className="w-full input-style no-spinner"
+                                min="0"
+                                step="0.01"
+                            />
+                        </div>
+                    </div>
+                )}
+
                 <div>
                     <div className="flex justify-between items-center mb-2">
                         <label className="block text-sm font-medium text-gray-700">Split between:</label>
@@ -920,13 +1021,13 @@ const AddExpenseForm = ({ participants, onAddExpense, expenseToEdit = null, onDo
                                             </span>
                                         )}
                                         {(splitMethod === 'amount' || splitMethod === 'percentage' || splitMethod === 'item') && (
-                                            <div className="flex items-center">
+                                            <div className="flex items-center w-24">
                                                 {(splitMethod === 'amount' || splitMethod === 'item') && <span className="text-gray-500 mr-1">$</span>}
                                                 <input
                                                     type="number"
                                                     value={splitMethod === 'item' ? (itemized[p.name] || '') : (splitValues[p.name] || '')}
                                                     onChange={(e) => splitMethod === 'item' ? handleItemizedValueChange(p.name, e.target.value) : handleSplitValueChange(p.name, e.target.value)}
-                                                    className="input-style no-spinner !p-1 !w-24 text-right"
+                                                    className={`input-style no-spinner !p-1 w-full text-right`}
                                                     placeholder="0.00"
                                                     min="0"
                                                     step="0.01"
@@ -1014,7 +1115,10 @@ const RecordPaymentForm = ({ participants, onAddExpense }) => {
                     </div>
                 </div>
                 <div className="flex gap-4">
-                    <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Amount" className="w-1/2 input-style" required min="0.01" step="0.01" />
+                    <div className="flex items-center w-1/2">
+                        <span className="text-gray-500 mr-2">$</span>
+                        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Amount" className="w-full input-style no-spinner" required min="0.01" step="0.01" />
+                    </div>
                     <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-1/2 input-style" required />
                 </div>
                 <div>
@@ -1154,16 +1258,33 @@ const SplitBreakdownDisplay = ({ expense }) => {
             break;
         case 'item':
             breakdownTitle = 'Split by Item';
-            const baseTotal = Object.values(expense.itemized).reduce((sum, val) => sum + val, 0);
-            const extras = expense.amount - baseTotal;
-            breakdownList = Object.entries(expense.itemized).map(([name, itemCost]) => {
-                const proportion = baseTotal > 0 ? itemCost / baseTotal : 0;
-                const shareOfExtras = extras * proportion;
-                return {
-                    name,
-                    value: `$${(itemCost + shareOfExtras).toFixed(2)} (Item: $${itemCost.toFixed(2)} + Extras: $${shareOfExtras.toFixed(2)})`
-                }
-            });
+            const sharedAmount = expense.amountToSplit || 0;
+            if (sharedAmount > 0) {
+                breakdownTitle += ` (with $${sharedAmount.toFixed(2)} shared)`;
+            }
+
+            const baseTotal = expense.baseAmount || 0;
+            if (baseTotal > 0) {
+                const extras = expense.amount - baseTotal;
+                const evenSplitPart = (expense.amountToSplit || 0) / expense.splitBetween.length;
+
+                breakdownList = expense.splitBetween.map(name => {
+                    const itemCost = expense.itemized[name] || 0;
+                    const personBase = itemCost + evenSplitPart;
+                    const proportion = personBase / baseTotal;
+                    const shareOfExtras = extras * proportion;
+                    const totalShare = personBase + shareOfExtras;
+
+                    let detailString = `Item: $${itemCost.toFixed(2)}`;
+                    if (evenSplitPart > 0) detailString += ` + Shared: $${evenSplitPart.toFixed(2)}`;
+                    if (shareOfExtras > 0.005) detailString += ` + Extras: $${shareOfExtras.toFixed(2)}`;
+
+                    return {
+                        name,
+                        value: `$${totalShare.toFixed(2)} (${detailString})`
+                    }
+                });
+            }
             break;
         default:
             return <p>Split details unavailable</p>;
@@ -1232,50 +1353,55 @@ const DebtDetail = ({ debt, expenses }) => {
         let netOwed = 0;
 
         expenses.forEach(exp => {
-            // Case 1: Creditor paid for an expense involving the debtor
-            if (!exp.isPayment && exp.paidBy === debt.to) {
-                let debtorShare = 0;
-                if (exp.splitMethod === 'evenly' && exp.splitBetween.includes(debt.from)) {
-                    debtorShare = exp.amount / exp.splitBetween.length;
-                } else if (exp.splitValues && exp.splitValues[debt.from]) {
-                    if (exp.splitMethod === 'amount') {
-                        debtorShare = exp.splitValues[debt.from];
-                    } else if (exp.splitMethod === 'percentage') {
-                        debtorShare = exp.amount * (exp.splitValues[debt.from] / 100);
+            let debtorShare = 0;
+            let creditorShare = 0;
+
+            if (!exp.isPayment && exp.splitBetween) {
+                // Case 1: Creditor paid for an expense involving the debtor
+                if (exp.paidBy === debt.to && exp.splitBetween.includes(debt.from)) {
+                    if (exp.splitMethod === 'evenly') {
+                        debtorShare = exp.amount / exp.splitBetween.length;
+                    } else if (exp.splitValues && exp.splitValues[debt.from]) {
+                        if (exp.splitMethod === 'amount') debtorShare = exp.splitValues[debt.from];
+                        else if (exp.splitMethod === 'percentage') debtorShare = exp.amount * (exp.splitValues[debt.from] / 100);
+                    } else if (exp.splitMethod === 'item') {
+                        const baseTotal = exp.baseAmount || 0;
+                        if (baseTotal > 0) {
+                            const extras = exp.amount - baseTotal;
+                            const evenSplitPart = (exp.amountToSplit || 0) / exp.splitBetween.length;
+                            const itemCost = exp.itemized[debt.from] || 0;
+                            const personBase = itemCost + evenSplitPart;
+                            debtorShare = personBase + (extras * (personBase / baseTotal));
+                        }
                     }
-                } else if (exp.splitMethod === 'item' && exp.itemized && exp.itemized[debt.from]) {
-                    const baseTotal = Object.values(exp.itemized).reduce((sum, val) => sum + val, 0);
-                    const extras = exp.amount - baseTotal;
-                    const proportion = baseTotal > 0 ? exp.itemized[debt.from] / baseTotal : 0;
-                    debtorShare = exp.itemized[debt.from] + (extras * proportion);
                 }
-                if (debtorShare > 0) {
-                    transactions.push({ description: `For "${exp.description}"`, amount: debtorShare, type: 'debt', date: exp.date });
-                    netOwed += debtorShare;
+                // Case 2: Debtor paid for an expense involving the creditor
+                if (exp.paidBy === debt.from && exp.splitBetween.includes(debt.to)) {
+                    if (exp.splitMethod === 'evenly') {
+                        creditorShare = exp.amount / exp.splitBetween.length;
+                    } else if (exp.splitValues && exp.splitValues[debt.to]) {
+                        if (exp.splitMethod === 'amount') creditorShare = exp.splitValues[debt.to];
+                        else if (exp.splitMethod === 'percentage') creditorShare = exp.amount * (exp.splitValues[debt.to] / 100);
+                    } else if (exp.splitMethod === 'item') {
+                        const baseTotal = exp.baseAmount || 0;
+                        if (baseTotal > 0) {
+                            const extras = exp.amount - baseTotal;
+                            const evenSplitPart = (exp.amountToSplit || 0) / exp.splitBetween.length;
+                            const itemCost = exp.itemized[debt.to] || 0;
+                            const personBase = itemCost + evenSplitPart;
+                            creditorShare = personBase + (extras * (personBase / baseTotal));
+                        }
+                    }
                 }
             }
 
-            // Case 2: Debtor paid for an expense involving the creditor
-            if (!exp.isPayment && exp.paidBy === debt.from) {
-                let creditorShare = 0;
-                if (exp.splitMethod === 'evenly' && exp.splitBetween.includes(debt.to)) {
-                    creditorShare = exp.amount / exp.splitBetween.length;
-                } else if (exp.splitValues && exp.splitValues[debt.to]) {
-                    if (exp.splitMethod === 'amount') {
-                        creditorShare = exp.splitValues[debt.to];
-                    } else if (exp.splitMethod === 'percentage') {
-                        creditorShare = exp.amount * (exp.splitValues[debt.to] / 100);
-                    }
-                } else if (exp.splitMethod === 'item' && exp.itemized && exp.itemized[debt.to]) {
-                    const baseTotal = Object.values(exp.itemized).reduce((sum, val) => sum + val, 0);
-                    const extras = exp.amount - baseTotal;
-                    const proportion = baseTotal > 0 ? exp.itemized[debt.to] / baseTotal : 0;
-                    creditorShare = exp.itemized[debt.to] + (extras * proportion);
-                }
-                if (creditorShare > 0) {
-                    transactions.push({ description: `"${exp.description}" (You paid for ${debt.to})`, amount: -creditorShare, type: 'credit', date: exp.date });
-                    netOwed -= creditorShare;
-                }
+            if (debtorShare > 0) {
+                transactions.push({ description: `For "${exp.description}"`, amount: debtorShare, type: 'debt', date: exp.date });
+                netOwed += debtorShare;
+            }
+            if (creditorShare > 0) {
+                transactions.push({ description: `"${exp.description}" (You paid for ${debt.to})`, amount: -creditorShare, type: 'credit', date: exp.date });
+                netOwed -= creditorShare;
             }
 
             // Case 3: Direct payments between the two
