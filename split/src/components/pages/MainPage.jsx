@@ -55,16 +55,23 @@ export default function MainPage() {
                     color: white;
                 }
                 .input-style {
-                    background-color: #f9fafb; /* bg-gray-50 */
-                    border: 1px solid #d1d5db; /* border-gray-300 */
-                    border-radius: 0.5rem; /* rounded-lg */
-                    padding: 0.75rem 1rem;
+                    background-color: #ffffff;
+                    border: 1px solid #e5e7eb; /* border-gray-200 */
+                    border-radius: 0.625rem; /* rounded-[10px] */
+                    padding: 0.625rem 0.875rem;
                     color: #1f2937; /* text-gray-800 */
                     width: 100%;
+                    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+                }
+                .input-style::placeholder {
+                    color: #9ca3af; /* text-gray-400 */
+                }
+                .input-style:hover {
+                    border-color: #d1d5db; /* border-gray-300 */
                 }
                 .input-style:focus {
                     outline: none;
-                    box-shadow: 0 0 0 2px #10b981; /* ring-2 ring-green-500 */
+                    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18); /* emerald focus ring */
                     border-color: #10b981;
                 }
                 /* Hide number input spinners */
